@@ -41,7 +41,6 @@ public class MutualFriends {
                     continue;
                 String userKey = userid.compareTo(friend) < 0 ? userid+","+friend : friend+","+userid;
                 String regex = "((\\b"+friend+"[^\\w]+)|\\b,?"+friend+"$)";
-                //friends.set( split[1].replaceAll(regex, "") );
                 friends.set( split[1].replaceAll(regex, "") );
                 user.set(userKey);
                 context.write(user,friends);
@@ -104,11 +103,9 @@ public class MutualFriends {
             System.err.println("Usage: MutualFriends <in1> <in2> <out>");
             System.exit(2);
         }
-// create a job with name "wordcount"
-        //System.out.println("crossed arg check");
+// create a job with name "MutualFriends"
         Job job = new Job(conf, "MutualFriends");
         job.setJarByClass(MutualFriends.class);
-        //System.out.println("crossed class check");
         job.setMapperClass(Map.class);
         job.setReducerClass(Reduce.class);
 // uncomment the following line to add the Combiner job.setCombinerClass(Reduce.class);
