@@ -31,22 +31,41 @@ public class MutualFriends {
             String[] split = value.toString().split("\\s");
             //split[0] - user
             //split[1] - friendList
+            Configuration conf = context.getConfiguration();
+
+            String mode = conf.get("Mode");
+            String givenUser1= conf.get("UserA");
+            String givenUser2= conf.get("UserB");
+
             String userid = split[0];
             if( split.length == 1 ) {
                 return;
             }
             String[] others = split[1].split(",");
             for( String friend : others ) {
+
                 if( userid.equals(friend) )
                     continue;
-                String userKey = userid.compareTo(friend) < 0 ? userid+","+friend : friend+","+userid;
-                String regex = "((\\b"+friend+"[^\\w]+)|\\b,?"+friend+"$)";
-                friends.set( split[1].replaceAll(regex, "") );
-                user.set(userKey);
-                context.write(user,friends);
+
+                if( mode.equals("1") ) {
+
+                    String userKey = userid.compareTo(friend) < 0 ? userid + "," + friend : friend + "," + userid;
+                    String regex = "((\\b" + friend + "[^\\w]+)|\\b,?" + friend + "$)";
+                    friends.set(split[1].replaceAll(regex, ""));
+                    user.set(userKey);
+                    context.write(user, friends);
+                }
+                else if( mode.equals("2") ) {
+
+                    if ((userid.equals(givenUser1) || userid.equals(givenUser2)) && (friend.equals(givenUser1) || friend.equals(givenUser2))) {
+                        String userKey = userid.compareTo(friend) < 0 ? userid + "," + friend : friend + "," + userid;
+                        String regex = "((\\b" + friend + "[^\\w]+)|\\b,?" + friend + "$)";
+                        friends.set(split[1].replaceAll(regex, ""));
+                        user.set(userKey);
+                        context.write(user, friends);
+                    }
+                }
             }
-
-
         }
 
     }
@@ -84,6 +103,7 @@ public class MutualFriends {
 
             String[] friendsList = new String[2];
             int i = 0;
+
             for( Text value: values ) {
                 friendsList[i++] = value.toString();
             }
@@ -99,10 +119,19 @@ public class MutualFriends {
         Configuration conf = new Configuration();
         String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 // get all args
-        if (otherArgs.length != 3) {
-            System.err.println("Usage: MutualFriends <in1> <in2> <out>");
+        if (otherArgs.length != 2 && otherArgs.length != 4) {
+            System.err.println("Usage: MutualFriends <in> <out>");
             System.exit(2);
         }
+        //mode - 1 = process mutual friends for all users
+        //mode - 2 = process mutual friends only for given users
+        conf.set("Mode", "1");
+        if( otherArgs.length == 4 ) {
+            conf.set("Mode", "2");
+            conf.set("UserA", otherArgs[2]);
+            conf.set("UserB", otherArgs[3]);
+        }
+
 // create a job with name "MutualFriends"
         Job job = new Job(conf, "MutualFriends");
         job.setJarByClass(MutualFriends.class);
@@ -115,9 +144,9 @@ public class MutualFriends {
         job.setOutputValueClass(Text.class);
 //set the HDFS path of the input data
         FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
-        FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
+        //FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
 // set the HDFS path for the output
-        FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
+        FileOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
 //Wait till job completion
         System.exit(job.waitForCompletion(true) ? 0 : 1);
     }
