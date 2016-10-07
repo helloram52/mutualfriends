@@ -100,7 +100,7 @@ public class MutualFriends {
         Configuration conf = new Configuration();
         String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 // get all args
-        if (otherArgs.length != 2 && otherArgs.length != 4) {
+        if (otherArgs.length != 2) {
             System.err.println("Usage: MutualFriends <FriendsFile> <output>");
             System.exit(2);
         }
