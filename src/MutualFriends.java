@@ -28,15 +28,9 @@ public class MutualFriends {
         ) throws IOException, InterruptedException {
 
             //split the line into user and friends
-            String[] split = value.toString().split("\\s");
+            String[] split = value.toString().split("\\t");
             //split[0] - user
             //split[1] - friendList
-            Configuration conf = context.getConfiguration();
-
-            String mode = conf.get("Mode");
-            String givenUser1= conf.get("UserA");
-            String givenUser2= conf.get("UserB");
-
             String userid = split[0];
             if( split.length == 1 ) {
                 return;
@@ -47,24 +41,11 @@ public class MutualFriends {
                 if( userid.equals(friend) )
                     continue;
 
-                if( mode.equals("1") ) {
-
-                    String userKey = userid.compareTo(friend) < 0 ? userid + "," + friend : friend + "," + userid;
-                    String regex = "((\\b" + friend + "[^\\w]+)|\\b,?" + friend + "$)";
-                    friends.set(split[1].replaceAll(regex, ""));
-                    user.set(userKey);
-                    context.write(user, friends);
-                }
-                else if( mode.equals("2") ) {
-
-                    if ((userid.equals(givenUser1) || userid.equals(givenUser2)) && (friend.equals(givenUser1) || friend.equals(givenUser2))) {
-                        String userKey = userid.compareTo(friend) < 0 ? userid + "," + friend : friend + "," + userid;
-                        String regex = "((\\b" + friend + "[^\\w]+)|\\b,?" + friend + "$)";
-                        friends.set(split[1].replaceAll(regex, ""));
-                        user.set(userKey);
-                        context.write(user, friends);
-                    }
-                }
+                String userKey = (Integer.parseInt(userid) < Integer.parseInt(friend) ) ? userid + "," + friend : friend + "," + userid;
+                String regex = "((\\b" + friend + "[^\\w]+)|\\b,?" + friend + "$)";
+                friends.set(split[1].replaceAll(regex, ""));
+                user.set(userKey);
+                context.write(user, friends);
             }
         }
 
@@ -120,16 +101,8 @@ public class MutualFriends {
         String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 // get all args
         if (otherArgs.length != 2 && otherArgs.length != 4) {
-            System.err.println("Usage: MutualFriends <in> <out>");
+            System.err.println("Usage: MutualFriends <FriendsFile> <output>");
             System.exit(2);
-        }
-        //mode - 1 = process mutual friends for all users
-        //mode - 2 = process mutual friends only for given users
-        conf.set("Mode", "1");
-        if( otherArgs.length == 4 ) {
-            conf.set("Mode", "2");
-            conf.set("UserA", otherArgs[2]);
-            conf.set("UserB", otherArgs[3]);
         }
 
 // create a job with name "MutualFriends"
